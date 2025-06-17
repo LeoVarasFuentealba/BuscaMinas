@@ -38,7 +38,7 @@ def expand_zeros(start, coords_mines, revealed, height, length):
                         if (ny, nx) not in visited and search_mines([ny, nx], coords_mines) == 0:
                             queue.append((ny, nx))
 
-def create_terrain(height, length, coords, mode, coords_inputs):
+def create_terrain(height, length, coords, mode, coords_inputs, flags_coords):
     RESET = "\033[0m"
     BLUE = "\033[94m"
     RED = "\033[91m"
@@ -56,46 +56,40 @@ def create_terrain(height, length, coords, mode, coords_inputs):
     }
 
     # Encabezado de columnas
-    terrain = "   "  # espacio para índices de fila
+    terrain = "   "
     for x in range(1, length + 1):
         terrain += f"{x%10}"
     terrain += "\n"
 
     for i in range(1, height + 1):
-        terrain += f"{i:2d}|"  # Número de fila con padding
+        terrain += f"{i:2d}|"
 
         for x in range(1, length + 1):
             current_input = [i, x]
-            already_played = any(ci[0] == i and ci[1] == x for ci in coords_inputs)
-            is_mine = [i, x] in coords
+            already_played = current_input in coords_inputs
+            is_flagged = current_input in flags_coords
+            is_mine = current_input in coords
 
-            if coords_inputs and coords_inputs[-1] == current_input:
-                if is_mine and mode == "step":
+            if already_played:
+                if is_mine and mode == "step" and coords_inputs[-1] == current_input:
                     terrain += f"{RED}M{RESET}"
                     print("YOU LOSE")
                     exit()
-                elif not is_mine and mode == "step":
-                    n = search_mines(current_input, coords)
-                    color = COLORS.get(n, RESET)
-                    terrain += f"{color}{n}{RESET}"
-                elif mode == "flag":
-                    terrain += f"{RED}P{RESET}"
-            else:
-                if already_played:
-                    n = search_mines(current_input, coords)
-                    color = COLORS.get(n, RESET)
-                    terrain += f"{color}{n}{RESET}"
-                elif mode == "flag" and current_input in coords_inputs:
-                    terrain += f"{RED}P{RESET}"
                 else:
-                    terrain += f"{BLUE}X{RESET}"
+                    n = search_mines(current_input, coords)
+                    color = COLORS.get(n, RESET)
+                    terrain += f"{color}{n}{RESET}"
+            elif is_flagged:
+                terrain += f"{RED}P{RESET}"
+            else:
+                terrain += f"{BLUE}X{RESET}"
 
         terrain += f"{YELLOW_BG}|{RESET}\n"
 
     return terrain
 
 def generate_mines(height, length):
-    num_mines = round((height * length) / 5)
+    num_mines = round((height * length) / 8)
     coords = set()
     while len(coords) < num_mines:
         x = random.randint(1, height)
@@ -107,8 +101,9 @@ if __name__ == "__main__":
     height = 10
     length = 30
     coords = generate_mines(height, length)
-    mode = "start"
+    mode = "step"
     coords_inputs = []
+    flags_coords = []
 
     input_player = ""
     while input_player != "end":
@@ -131,16 +126,24 @@ if __name__ == "__main__":
                 col = int(coords_string[1].strip())
                 new_input = [row, col]
 
-                if mode == "step":
-                    if new_input in coords:
+                if mode == "flag":
+                    if new_input in flags_coords:
+                        flags_coords.remove(new_input)
+                    else:
+                        flags_coords.append(new_input)
+                elif mode == "step":
+                    if new_input in flags_coords:
+                        print("No puedes pisar una casilla con bandera. Quita la bandera primero.")
+                    elif new_input in coords:
                         coords_inputs.append(new_input)
-                        print(create_terrain(height, length, coords, mode, coords_inputs))
+                        print(create_terrain(height, length, coords, mode, coords_inputs, flags_coords))
                         continue
-
-                    if search_mines(new_input, coords) == 0:
+                    elif search_mines(new_input, coords) == 0:
                         expand_zeros(new_input, coords, coords_inputs, height, length)
                     else:
                         coords_inputs.append(new_input)
-                print(create_terrain(height, length, coords, mode, coords_inputs))
-            except:
+
+                print(create_terrain(height, length, coords, mode, coords_inputs, flags_coords))
+
+            except Exception as e:
                 print("Entrada inválida. Usa formato: 'fila, columna' (ej: 2, 5)")
