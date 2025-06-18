@@ -9,4 +9,6 @@ Al ejecutar el programa, genera las posiciones de las minas siguiendo los limite
 
 Si la coordenada seleccionada no tiene ninguna mina alrededor se mostrara la casilla como '0' y mostrara las casillas alrededor de esta, de manera que si hay otra casilla sin minas cerca, tambien se revelaran las casillas a su alrededor y asi recursivamente.
 
-El juego no esta terminado, pero es funcional en su parte mas importante, falta controlar el fin del juego en caso de ganar y algunos otros retoques.
+En caso de marcar todas las casillas sin minas, el juego te felicitara y terminara de ejecutar.
+![image](https://github.com/user-attachments/assets/76b252df-0dff-4c20-ada2-108abfa8c2b5)
+
