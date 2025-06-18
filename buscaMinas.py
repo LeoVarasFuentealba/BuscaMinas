@@ -97,6 +97,15 @@ def generate_mines(height, length):
         coords.add((x, y))
     return [[x, y] for x, y in coords]
 
+def check_win_condition(height, length, mine_coords, revealed_coords):
+    total_cells = height * length
+    total_mines = len(mine_coords)
+    total_revealed = len(revealed_coords)
+
+    if total_cells - total_mines == total_revealed:
+        print("\n¡FELICIDADES! Has descubierto todas las casillas sin minas. ¡Has ganado!")
+        exit()
+
 if __name__ == "__main__":
     height = 10
     length = 30
@@ -144,6 +153,7 @@ if __name__ == "__main__":
                         coords_inputs.append(new_input)
 
                 print(create_terrain(height, length, coords, mode, coords_inputs, flags_coords))
+                check_win_condition(height, length, coords, coords_inputs)
 
             except Exception as e:
                 print("Entrada inválida. Usa formato: 'fila, columna' (ej: 2, 5)")
