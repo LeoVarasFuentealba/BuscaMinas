@@ -1,6 +1,9 @@
 import random
 from collections import deque
 
+from altair import when
+from annotated_types import LowerCase
+
 def search_mines(cs, coords_mines):
     y, x = cs[0], cs[1]
     side_coords = [
@@ -88,8 +91,8 @@ def create_terrain(height, length, coords, mode, coords_inputs, flags_coords):
 
     return terrain
 
-def generate_mines(height, length):
-    num_mines = round((height * length) / 8)
+def generate_mines(height, length, minas):
+    num_mines = round((height * length) / minas)
     coords = set()
     while len(coords) < num_mines:
         x = random.randint(1, height)
@@ -106,10 +109,24 @@ def check_win_condition(height, length, mine_coords, revealed_coords):
         print("\n¡FELICIDADES! Has descubierto todas las casillas sin minas. ¡Has ganado!")
         exit()
 
+def start_menu():
+    input_player = ""
+    while input_player not in {"facil", "normal", "dificil"}:
+
+        print("Escribe una dificultad (facil/normal/dificil)")
+        input_player = input("> ").lower()
+
+        dimensiones = {
+            "facil": (5, 10, 8),
+            "normal": (8, 20, 5),
+            "dificil":(13, 30, 3)
+        } .get(input_player, "retry")
+
+    return dimensiones[0], dimensiones[1], dimensiones[2]
+
 if __name__ == "__main__":
-    height = 10
-    length = 30
-    coords = generate_mines(height, length)
+    height, length, minas = start_menu()
+    coords = generate_mines(height, length, minas)
     mode = "step"
     coords_inputs = []
     flags_coords = []
