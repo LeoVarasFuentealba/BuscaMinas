@@ -1,9 +1,6 @@
 import random
 from collections import deque
 
-from altair import when
-from annotated_types import LowerCase
-
 def search_mines(cs, coords_mines):
     y, x = cs[0], cs[1]
     side_coords = [
@@ -58,7 +55,6 @@ def create_terrain(height, length, coords, mode, coords_inputs, flags_coords):
         8: "\033[38;5;196m",  # Rojo fuerte
     }
 
-    # Encabezado de columnas
     terrain = "   "
     for x in range(1, length + 1):
         terrain += f"{x%10}"
@@ -91,14 +87,26 @@ def create_terrain(height, length, coords, mode, coords_inputs, flags_coords):
 
     return terrain
 
-def generate_mines(height, length, minas):
+def generate_mines(height, length, minas, safe_zone):
     num_mines = round((height * length) / minas)
     coords = set()
     while len(coords) < num_mines:
         x = random.randint(1, height)
         y = random.randint(1, length)
+        if (x, y) in safe_zone:
+            continue
         coords.add((x, y))
     return [[x, y] for x, y in coords]
+
+def get_safe_zone(first_move):
+    y, x = first_move
+    zone = set()
+    for dy in [-1, 0, 1]:
+        for dx in [-1, 0, 1]:
+            ny, nx = y + dy, x + dx
+            if ny >= 1 and nx >= 1:
+                zone.add((ny, nx))
+    return zone
 
 def check_win_condition(height, length, mine_coords, revealed_coords):
     total_cells = height * length
@@ -112,21 +120,20 @@ def check_win_condition(height, length, mine_coords, revealed_coords):
 def start_menu():
     input_player = ""
     while input_player not in {"facil", "normal", "dificil"}:
-
         print("Escribe una dificultad (facil/normal/dificil)")
         input_player = input("> ").lower()
 
         dimensiones = {
-            "facil": (5, 10, 8),
-            "normal": (8, 20, 5),
-            "dificil":(13, 30, 3)
-        } .get(input_player, "retry")
+            "facil": (5, 10, 9),
+            "normal": (10, 30, 7),
+            "dificil": (15, 40, 5)
+        }.get(input_player, "retry")
 
     return dimensiones[0], dimensiones[1], dimensiones[2]
 
 if __name__ == "__main__":
     height, length, minas = start_menu()
-    coords = generate_mines(height, length, minas)
+    coords = []
     mode = "step"
     coords_inputs = []
     flags_coords = []
@@ -144,7 +151,6 @@ if __name__ == "__main__":
             mode = "flag"
         elif input_player == "end":
             print("Fin del juego")
-            break
         else:
             try:
                 coords_string = input_player.split(",")
@@ -160,7 +166,14 @@ if __name__ == "__main__":
                 elif mode == "step":
                     if new_input in flags_coords:
                         print("No puedes pisar una casilla con bandera. Quita la bandera primero.")
-                    elif new_input in coords:
+                        continue
+
+                    if not coords_inputs:
+                        # Primera jugada: crear minas excluyendo la zona segura
+                        safe_zone = get_safe_zone(new_input)
+                        coords = generate_mines(height, length, minas, safe_zone)
+
+                    if new_input in coords:
                         coords_inputs.append(new_input)
                         print(create_terrain(height, length, coords, mode, coords_inputs, flags_coords))
                         continue
